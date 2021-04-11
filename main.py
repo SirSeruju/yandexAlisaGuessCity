@@ -28,11 +28,23 @@ def main():
     }
     handle_dialog(response, request.json)
     logging.info('Response: %r', response)
+    print(request.json)
     return json.dumps(response)
 
 
 def handle_dialog(res, req):
     user_id = req['session']['user_id']
+    res['response']['buttons'] = [{
+        'title': 'Помощь',
+        'hide': True
+    }]
+    if req['request']['original_utterance'] == "Помощь":
+        res['response']['text'] = 'Это игра "Угадай город", после того как вы назоветесь, вы можете сыграть. Вам показывают картинки, а вы пишите город и угадываете или нет.'
+        if 'buttons' in sessionStorage[user_id]:
+            res['response']['buttons'] = sessionStorage[user_id]['buttons']
+        return
+
+
     if req['session']['new']:
         res['response']['text'] = 'Привет! Назови своё имя!'
         sessionStorage[user_id] = {
@@ -52,7 +64,7 @@ def handle_dialog(res, req):
             # как видно из предыдущего навыка, сюда мы попали, потому что пользователь написал своем имя.
             # Предлагаем ему сыграть и два варианта ответа "Да" и "Нет".
             res['response']['text'] = f'Приятно познакомиться, {first_name.title()}. Я Алиса. Отгадаешь город по фото?'
-            res['response']['buttons'] = [
+            res['response']['buttons'] += [
                 {
                     'title': 'Да',
                     'hide': True
@@ -87,7 +99,7 @@ def handle_dialog(res, req):
                 res['end_session'] = True
             else:
                 res['response']['text'] = 'Не поняла ответа! Так да или нет?'
-                res['response']['buttons'] = [
+                res['response']['buttons'] += [
                     {
                         'title': 'Да',
                         'hide': True
@@ -99,6 +111,7 @@ def handle_dialog(res, req):
                 ]
         else:
             play_game(res, req)
+    sessionStorage[user_id]['buttons'] = res['response']['buttons']
 
 
 def play_game(res, req):
@@ -128,6 +141,16 @@ def play_game(res, req):
             res['response']['text'] = 'Правильно! Сыграем ещё?'
             sessionStorage[user_id]['guessed_cities'].append(city)
             sessionStorage[user_id]['game_started'] = False
+            res['response']['buttons'] += [
+                {
+                    'title': 'Да',
+                    'hide': True
+                },
+                {
+                    'title': 'Нет',
+                    'hide': True
+                }
+            ]
             return
         else:
             # если нет
@@ -171,4 +194,4 @@ def get_first_name(req):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0")
