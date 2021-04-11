@@ -28,7 +28,6 @@ def main():
     }
     handle_dialog(response, request.json)
     logging.info('Response: %r', response)
-    print(request.json)
     return json.dumps(response)
 
 
@@ -39,7 +38,9 @@ def handle_dialog(res, req):
         'hide': True
     }]
     if req['request']['original_utterance'] == "Помощь":
-        res['response']['text'] = 'Это игра "Угадай город", после того как вы назоветесь, вы можете сыграть. Вам показывают картинки, а вы пишите город и угадываете или нет.'
+        res['response']['text'] = 'Это игра "Угадай город", после того как вы назоветесь, вы можете сыграть. ' +\
+                                  'Вам показывают картинки, а вы пишите город и угадываете или нет.'
+                
         if 'buttons' in sessionStorage[user_id]:
             res['response']['buttons'] = sessionStorage[user_id]['buttons']
         return
@@ -97,6 +98,18 @@ def handle_dialog(res, req):
             elif 'нет' in req['request']['nlu']['tokens']:
                 res['response']['text'] = 'Ну и ладно!'
                 res['end_session'] = True
+            elif req['request']['original_utterance'] == "Показать город на карте":
+                res['response']['text'] = "Сыграем еще?"
+                res['response']['buttons'] += [
+                    {
+                        'title': 'Да',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Нет',
+                        'hide': True
+                    }
+                ]
             else:
                 res['response']['text'] = 'Не поняла ответа! Так да или нет?'
                 res['response']['buttons'] += [
@@ -149,7 +162,12 @@ def play_game(res, req):
                 {
                     'title': 'Нет',
                     'hide': True
-                }
+                },
+                {
+                    'title': 'Показать город на карте',
+                    'url': 'https://yandex.ru/maps/?mode=search&text=' + city,
+                    'hide': True
+                },
             ]
             return
         else:
